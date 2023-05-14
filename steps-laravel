@@ -1,0 +1,200 @@
+su postgres
+## psql -h ip_servidor -U usuario -d base_de_datos
+psql -U postgres -d postgres
+## CREATE DATABASE nuevadb;
+CREATE DATABASE todo_db;
+///////////////////////////////////////////////////
+composer create-project laravel/laravel example-app
+composer install -vvv
+//////////////////////////////////
+php artisan make:model Task -mcrsf
+//////////////////////////////////
+/* migration
+    public function up(): void
+    {
+        Schema::create('tasks', function (Blueprint $table) {
+            $table->id();
+            $table->string('title', 50);
+            $table->text('description');
+            $table->boolean('done')->default(false);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+    }
+/*
+/////////////////////////////////
+/* factory
+    public function definition(): array
+    {
+        return [
+            'title' => fake()->unique()->text(25),
+            'description' => fake()->text(50),
+            'done' => fake()->boolean(),
+        ];        
+    }
+*/
+/////////////////////////////////
+/*
+DatabaseSeeder
+    $this->call([
+        TaskSeeder::class,
+    ]);
+*/
+
+/* seeder
+    public function run(): void
+    {
+        \App\Models\Task::factory(3)->create();
+    }
+*/
+/////////////////////////////////
+composer dump-autoload
+php artisan cache:clear
+php artisan config:clear
+php artisan view:clear
+php artisan route:clear
+php artisan config:cache
+php artisan optimize
+php artisan storage:link
+php artisan migrate:fresh --seed
+/////////////////////////////////
+/* model
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Task extends Model
+{
+    use HasFactory, SoftDeletes;
+    
+    protected $fillable = [
+        'title',        
+        'description',
+        'done'
+    ];
+}
+*/
+////////////////////////////////
+/*
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Task;
+use Illuminate\Http\Request;
+use \Illuminate\Http\JsonResponse;
+
+class TaskController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(): Array
+    {
+        $tasks = Task::all()->toArray();
+        return array_reverse($tasks);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request): JsonResponse
+    {    
+        /*$task = Task::create([              
+            'title' => $request->input('title'),
+            'description' => $request->input('description')       
+        ]);*/
+    
+        $task = new Task([
+            'title' => $request->title,
+            'description' => $request->description
+        ]);
+        $task->save(); 
+        $task->refresh();
+        
+        return response()->json([
+            "taskId" => $task->id,
+            "message"=> "The task successfully stored"
+        ], 201);
+    }    
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Task $task): JsonResponse
+    {
+        return  response()->json($task);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, Task $task): JsonResponse
+    {
+        // $task->update($request->all());
+        $task->title = $request->title;
+        $task->description = $request->description;
+        $task->done = $request->done;
+        $task->save();
+
+        return response()->json(["message"=> "The task successfully updated"], 200);
+    }   
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Task $task)
+    {
+        //Task::destroy($task->id);
+        $task->delete();        
+ 
+        return response()->json([], 204);
+    }
+    
+}
+*/
+////////////////////////////////////////////
+/* routes/api
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TaskController;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+| Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+|     return $request->user();
+| });
+|
+*/
+
+Route::prefix('tasks')->group(function () {
+    Route::get('/', [TaskController::class, 'index']);
+    Route::get('/{task}', [TaskController::class, 'show']); 
+    Route::post('/', [TaskController::class, 'store']);
+    Route::put('/{task}', [TaskController::class, 'update']);
+    Route::delete('/{task}', [TaskController::class,'destroy']);
+});
+*/
+
+
+
+get http://127.0.0.1:8000/api/tasks
+get http://127.0.0.1:8000/api/tasks/1
+post http://127.0.0.1:8000/api/tasks
+put http://127.0.0.1:8000/api/tasks/4
+delete http://127.0.0.1:8000/api/tasks/4
+
+
