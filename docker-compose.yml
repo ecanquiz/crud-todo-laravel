@@ -1,0 +1,49 @@
+version: "3.9"
+services:  
+  php_crudtodo:
+    build:
+      context: .
+      dockerfile: Dockerfile    
+    container_name: crudtodo_php
+    restart: unless-stopped
+    tty: true
+    working_dir: /var/www/html/
+    volumes:
+      - ./:/var/www/html/
+      - ./php/laravel.ini:/usr/local/etc/php/conf.d/laravel.ini
+    networks:
+      - crudtodo-network
+ 
+  nginx_crudtodolaravel:
+    depends_on:
+      - php_crudtodo
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: crudtodo_nginx
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+    networks:
+      - crudtodo-network
+
+  pgsql_crudtodo:
+    container_name: crudtodo_pgsql
+    image: postgres:13
+    ports:
+      - "${DB_PORT}:5432"
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - "./postgresql:/var/lib/postgresql/data"
+    networks:
+      - crudtodo-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "${DB_DATABASE}", "-U", "${DB_USERNAME}"]
+
+networks:
+  crudtodo-network:
+    driver: bridge
